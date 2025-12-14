@@ -529,7 +529,7 @@
                 <h1 class="text-3xl md:text-4xl font-bold text-center my-6 text-dark">开始播种</h1>
                 
                 <!-- 游戏状态显示 -->
-                <div id="score-display" class="stats-display text-primary">0/128</div>
+                <div id="score-display" class="stats-display text-primary">0/64</div>
                 
                 <!-- 计时器显示 -->
                 <div id="timer-display-click" class="timer-display">
@@ -1995,9 +1995,7 @@
             // 游戏状态变量
             window.clickGameState = {
                 currentScore: 0,
-                totalTargets: 128,
-                gameStarted: false,
-                startTime: 0,
+                totalTargets: 64,
                 timerInterval: null,
                 currentTime: 0,
                 bestTime: localStorage.getItem('clickGameBestTime') || null,
