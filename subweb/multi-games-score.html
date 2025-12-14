@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>码农的田地</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen flex items-start justify-center p-8">
+  <div class="max-w-4xl w-full bg-white rounded-xl shadow-lg p-6">
+    <h1 class="text-2xl font-bold mb-4">码地明细</h1>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- 左栏：文字与图片 -->
+      <div id="left-col" class="space-y-4 p-4 border rounded bg-gray-50">
+        <div id="narrative" class="text-gray-700">
+          <p id="narrative-text" class="mb-2"></p>
+          <div class="text-center">
+            <div class="mt-3">
+              <img id="celebration-img" src="../image/劳动最光荣.png" alt="庆祝图" class="mx-auto w-48 rounded" />
+            </div>
+          </div>
+          <p id="extra-note" class="mt-4 text-sm text-gray-500"></p>
+        </div>
+      </div>
+
+      <!-- 右栏：分数明细与按钮 -->
+      <div id="right-col" class="space-y-4 p-4">
+        <div id="details" class="space-y-4 bg-white"></div>
+
+        <div class="mt-2">
+          <p class="text-lg">最终码地：<span id="final-total" class="font-bold text-2xl text-primary">0</span></p>
+          <p class="mt-2 text-sm text-gray-600">号外：<span id="max-record" class="font-semibold text-secondary">--</span> — 这是目前记录在案的最高产量）。</p>
+        </div>
+
+        <div class="mt-4 flex flex-wrap gap-3">
+          <button id="clear-data" class="px-4 py-2 bg-gray-200 rounded">清除记录</button>
+          
+          <button id="back-to-quiz" class="px-4 py-2 bg-gray-800 text-white rounded">->从头开始</button>
+          <button id="go-start" class="px-4 py-2 bg-gray-800 text-white rounded">老子睡了&lt;-</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="score-utils.js"></script>
+  <script>
+    // 使用 score-utils 模块来计算总分
+    function loadScores() {
+      const quizScore = Number(localStorage.getItem('quizScore')) || 0;
+      // 从 multi_game_scores 数组获取轮次分数
+      let rounds = [];
+      try {
+        const raw = localStorage.getItem('multi_game_scores');
+        rounds = raw ? JSON.parse(raw) : [];
+      } catch (e) {
+        rounds = [];
+      }
+
+      // 播种分数优先从 rounds 的第一项取，否则倒退到 seedScore
+      let seedScore = 0;
+      if (rounds.length > 0) seedScore = Number(rounds[0].score || 0);
+      else seedScore = Number(localStorage.getItem('seedScore')) || 0;
+
+      // 之后6个游戏（紧随播种之后的最多6项）
+      const nextSix = rounds.length > 1 ? rounds.slice(1, 1 + 6) : [];
+
+      // 计算打字分与后续游戏合计（每项截断到128以与规则一致）
+      let typingSum = 0;
+      let nextSixSum = 0;
+      nextSix.forEach(r => {
+        const sc = Math.min(128, Number(r.score || 0) || 0);
+        nextSixSum += sc;
+        if (r.game === 'typing-practice') typingSum += sc;
+      });
+
+      // 调用共用计算函数（兼容老数据）
+      const finalTotal = (typeof ScoreUtils !== 'undefined') ? ScoreUtils.computeFinalTotal(quizScore, seedScore, nextSix) : (Math.min(128, Number(quizScore || 0)) + Math.min(128, Number(seedScore || 0)) + nextSixSum);
+
+      // 渲染明细
+      const details = document.getElementById('details');
+      details.innerHTML = '';
+
+      const quizEl = document.createElement('div');
+      quizEl.className = 'flex justify-between items-center p-3 bg-gray-50 rounded';
+      quizEl.innerHTML = `<span>分配获得</span><strong>${quizScore}</strong>`;
+      details.appendChild(quizEl);
+
+      const seedEl = document.createElement('div');
+      seedEl.className = 'flex justify-between items-center p-3 bg-gray-50 rounded';
+      seedEl.innerHTML = `<span>播种获得</span><strong>${seedScore}</strong>`;
+      details.appendChild(seedEl);
+
+      const listTitle = document.createElement('div');
+      listTitle.className = 'mt-2 font-medium';
+      listTitle.textContent = '二到七节气块的经历：';
+      details.appendChild(listTitle);
+
+      if (nextSix.length === 0) {
+        const noEl = document.createElement('div');
+        noEl.className = 'text-sm text-gray-500';
+        noEl.textContent = '未记录到后续游戏分数';
+        details.appendChild(noEl);
+      } else {
+        nextSix.forEach((r, idx) => {
+          const row = document.createElement('div');
+          row.className = 'flex justify-between items-center p-2';
+          const sign = r.game === 'typing-practice' ? '+' : '-';
+          row.innerHTML = `<span>${idx + 1}. ${r.game}</span><span class="font-bold">${sign}${r.score}</span>`;
+          details.appendChild(row);
+        });
+        const sumRow = document.createElement('div');
+        sumRow.className = 'flex justify-between items-center p-2 border-t mt-2';
+        sumRow.innerHTML = `<span>后续游戏合计</span><strong>${nextSixSum}</strong>`;
+        details.appendChild(sumRow);
+
+        const typingRow = document.createElement('div');
+        typingRow.className = 'flex justify-between items-center p-2';
+        typingRow.innerHTML = `<span>其中打字分</span><strong>${typingSum}</strong>`;
+        details.appendChild(typingRow);
+      }
+
+      document.getElementById('final-total').textContent = String(finalTotal);
+    }
+
+    document.getElementById('clear-data').addEventListener('click', () => {
+      if (!confirm('确认清除本次挑战的分数记录？')) return;
+      try {
+        localStorage.removeItem('multi_game_scores');
+        localStorage.removeItem('seedScore');
+        localStorage.removeItem('quizScore');
+        alert('已清除记录');
+        loadScores();
+      } catch (e) {
+        console.warn('清除记录失败', e);
+      }
+    });
+
+    loadScores();
+
+    // 将本次 finalTotal 保存到历史记录中，并计算最大值
+    (function registerTotalAndRenderMax() {
+      const finalEl = document.getElementById('final-total');
+      const finalTotal = Number(finalEl.textContent) || 0;
+
+      try {
+        const raw = localStorage.getItem('multi_games_totals');
+        const arr = raw ? JSON.parse(raw) : [];
+
+        // 简单去重：若最后一条与当前分数相同则不重复添加
+        const last = arr.length ? arr[arr.length - 1] : null;
+        if (!last || Number(last.total) !== finalTotal) {
+          arr.push({ total: finalTotal, ts: Date.now() });
+          localStorage.setItem('multi_games_totals', JSON.stringify(arr));
+        }
+
+        const max = arr.length ? Math.max.apply(null, arr.map(x => Number(x.total || 0))) : finalTotal;
+        document.getElementById('max-record').textContent = String(max);
+
+        // 填充叙事段落
+        const narrativeText = `经过七个季度块，共十四个季度的辛勤劳动，你收获了${finalTotal}K，可喜可贺。你抱着新收获的字节，笑得像↓`;
+        document.getElementById('narrative-text').textContent = narrativeText;
+        const extra = `号外！家庭联产承包责任制卓有成效！你注意到，隔壁的秦史璜他们家竟然码出了${max} 的超高产量。你心生佩服，又不由得想到：“明年！明年我一定要码出咱坳坳山的最高产量！”`;
+        document.getElementById('extra-note').textContent = extra;
+      } catch (e) {
+        console.warn('保存历史总分失败', e);
+      }
+    })();
+
+
+
+    // 键盘快捷键：Enter -> 问卷页面; Esc -> start 页面
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        window.location.href = '问答.html';
+      } else if (e.key === 'Escape') {
+        window.location.href = '../index.html';
+      }
+    });
+
+    document.getElementById('back-to-quiz').addEventListener('click', function() {
+      window.location.href = '问答.html';
+    });
+    document.getElementById('go-start').addEventListener('click', function() {
+      window.location.href = '../index.html';
+    });
+  </script>
+</body>
+</html>
