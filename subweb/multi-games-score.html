@@ -5,9 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>码农的田地</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .score-background-overlay {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: url('../image/分数结算背景.png');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        z-index: -2;
+        pointer-events: none;
+      }
+    }
+  </style>
 </head>
 <body class="bg-gray-50 min-h-screen flex items-start justify-center p-8">
-  <div class="max-w-4xl w-full bg-white rounded-xl shadow-lg p-6">
+  <div class="score-background-overlay"></div>
+  <div class="max-w-4xl w-full bg-white rounded-xl shadow-lg p-6" style="background-image: url('../image/报纸(2）.png'); background-size: cover; background-position: center; background-repeat: no-repeat; background-color: rgba(255, 255, 255, 0.8); background-blend-mode: overlay;">
     <h1 class="text-2xl font-bold mb-4">码地明细</h1>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <!-- 左栏：文字与图片 -->
@@ -29,7 +48,7 @@
 
         <div class="mt-2">
           <p class="text-lg">最终码地：<span id="final-total" class="font-bold text-2xl text-primary">0</span></p>
-          <p class="mt-2 text-sm text-gray-600">号外：<span id="max-record" class="font-semibold text-secondary">--</span> — 这是目前记录在案的最高产量）。</p>
+          <p class="mt-2 text-lg text-gray-600 font-bold">号外：<span id="max-record" class="font-bold text-secondary text-xl">--</span> — 这是目前记录在案的最高产量）。</p>
         </div>
 
         <div class="mt-4 flex flex-wrap gap-3">
@@ -45,6 +64,19 @@
   <script src="score-utils.js"></script>
   <script>
     // 使用 score-utils 模块来计算总分
+    
+    // 游戏名称映射函数
+    function getGameDisplayName(gameName) {
+      const gameNames = {
+        'click': '播种',
+        'puzzle': '旱灾',
+        'rhythm': '洪涝',
+        'whack-a-mole': '隔壁家的倒霉娃子',
+        'typing-practice': '耕耘'
+      };
+      return gameNames[gameName] || gameName;
+    }
+    
     function loadScores() {
       const quizScore = Number(localStorage.getItem('quizScore')) || 0;
       // 从 multi_game_scores 数组获取轮次分数
@@ -64,17 +96,32 @@
       // 之后6个游戏（紧随播种之后的最多6项）
       const nextSix = rounds.length > 1 ? rounds.slice(1, 1 + 6) : [];
 
-      // 计算打字分与后续游戏合计（每项截断到128以与规则一致）
-      let typingSum = 0;
-      let nextSixSum = 0;
+      // 分别计算各类游戏分数
+      let typingSum = 0;  // 耕耘分数
+      let deductionGamesSum = 0;  // 需要减去的游戏分数总和
+      let whackMoleScore = 0;  // 打地鼠分数
+      let puzzleScore = 0;  // 数字华容道分数
+      let rhythmScore = 0;  // 节奏大师分数
+      
       nextSix.forEach(r => {
-        const sc = Math.min(128, Number(r.score || 0) || 0);
-        nextSixSum += sc;
-        if (r.game === 'typing-practice') typingSum += sc;
+        const sc = Math.min(128, Number(r.score ));
+        
+        if (r.game === 'typing-practice') {
+          typingSum += sc;
+        } else if (r.game === 'whack-a-mole') {
+          whackMoleScore = sc;
+          // 不再从总分中扣除，而是作为加分项
+        } else if (r.game === 'puzzle') {
+          puzzleScore = sc;
+          // 不再从总分中扣除，而是作为加分项
+        } else if (r.game === 'rhythm') {
+          rhythmScore = sc;
+          // 不再从总分中扣除，而是作为加分项
+        }
       });
 
       // 调用共用计算函数（兼容老数据）
-      const finalTotal = (typeof ScoreUtils !== 'undefined') ? ScoreUtils.computeFinalTotal(quizScore, seedScore, nextSix) : (Math.min(128, Number(quizScore || 0)) + Math.min(128, Number(seedScore || 0)) + nextSixSum);
+      const finalTotal = (typeof ScoreUtils !== 'undefined') ? ScoreUtils.computeFinalTotal(quizScore, seedScore, nextSix) : (Math.min(128, Number(quizScore || 0)) + Math.min(128, Number(seedScore )) + typingSum - deductionGamesSum);
 
       // 渲染明细
       const details = document.getElementById('details');
@@ -101,22 +148,36 @@
         noEl.textContent = '未记录到后续游戏分数';
         details.appendChild(noEl);
       } else {
+        // 显示各个游戏的分数
         nextSix.forEach((r, idx) => {
           const row = document.createElement('div');
           row.className = 'flex justify-between items-center p-2';
-          const sign = r.game === 'typing-practice' ? '+' : '-';
-          row.innerHTML = `<span>${idx + 1}. ${r.game}</span><span class="font-bold">${sign}${r.score}</span>`;
+          
+          // 根据游戏类型确定符号
+          let sign = '';
+          if (r.game === 'typing-practice' || r.game === 'rhythm' || r.game === 'puzzle' || r.game === 'whack-a-mole') {
+            sign = '+';
+          }
+          
+          row.innerHTML = `<span>${idx + 1}. ${getGameDisplayName(r.game)}</span><span class="font-bold">${sign}${r.score}</span>`;
           details.appendChild(row);
         });
-        const sumRow = document.createElement('div');
-        sumRow.className = 'flex justify-between items-center p-2 border-t mt-2';
-        sumRow.innerHTML = `<span>后续游戏合计</span><strong>${nextSixSum}</strong>`;
-        details.appendChild(sumRow);
-
-        const typingRow = document.createElement('div');
-        typingRow.className = 'flex justify-between items-center p-2';
-        typingRow.innerHTML = `<span>其中打字分</span><strong>${typingSum}</strong>`;
-        details.appendChild(typingRow);
+        
+        // 显示需要减去的游戏分数合计
+        if (deductionGamesSum > 0) {
+          const deductionSumRow = document.createElement('div');
+          deductionSumRow.className = 'flex justify-between items-center p-2 border-t mt-2';
+          deductionSumRow.innerHTML = `<span>灾害残存</span><strong>${deductionGamesSum}</strong>`;
+          details.appendChild(deductionSumRow);
+        }
+        
+        // 显示耕耘收获
+        if (typingSum > 0) {
+          const typingRow = document.createElement('div');
+          typingRow.className = 'flex justify-between items-center p-2';
+          typingRow.innerHTML = `<span>其中耕耘收获</span><strong>+${typingSum}</strong>`;
+          details.appendChild(typingRow);
+        }
       }
 
       document.getElementById('final-total').textContent = String(finalTotal);
@@ -157,10 +218,13 @@
         document.getElementById('max-record').textContent = String(max);
 
         // 填充叙事段落
-        const narrativeText = `经过七个季度块，共十四个季度的辛勤劳动，你收获了${finalTotal}K，可喜可贺。你抱着新收获的字节，笑得像↓`;
+        const narrativeText = `经过七个季度块，共十四个季度的辛勤劳动，你收获了${finalTotal}K，可喜可贺。你抱着新收获的字节，回想起这段时间的披星戴月:在键盘上灵活跃动、不知疲倦码地的双手，为了抗洪救灾辛勤付出的日夜，携同家庭成员共同迈向美好生活的幸福……村头老槐树下，人们不再比谁家分的粮多，而是比谁家新添了牲口，谁家后生更肯下力气码地。土地还是那片土地，可汗水滴进去，竟真能听见金银禾苗生长的声响！“劳动创造幸福”的真理开始在你心中落地扎根，你思考着，不由得笑得灿烂↓ ↓ ↓`;
         document.getElementById('narrative-text').textContent = narrativeText;
-        const extra = `号外！家庭联产承包责任制卓有成效！你注意到，隔壁的秦史璜他们家竟然码出了${max} 的超高产量。你心生佩服，又不由得想到：“明年！明年我一定要码出咱坳坳山的最高产量！”`;
-        document.getElementById('extra-note').textContent = extra;
+        const extra = `这时候传来了快讯：
+号外！家庭联产承包责任制卓有成效！
+你注意到，隔壁的秦史璜他们家竟然码出了${max}的超高产量，
+你心生佩服，又不由得想到：“明年！明年我一定要码出咱坳坳山的最高产量！在几千年历史长河中，中国人民始终革故鼎新、自强不息，开发和建设了祖国辽阔秀丽的大好河山，开拓了波涛万顷的辽阔海疆，开垦了物产丰富的广袤粮田，治理了桀骜不驯的千百条大江大河，战胜了数不清的自然灾害，建设了星罗棋布的城镇乡村，发展了门类齐全的产业，形成了多姿多彩的生活。中国人民自古就明白，世界上没有坐享其成的好事，要幸福就要奋斗。今天，中国人民拥有的一切，凝聚着中国人的聪明才智，浸透着中国人的辛勤汗水，蕴含着中国人的巨大牺牲。只要14亿多中国人民始终发扬这种伟大奋斗精神，就一定能够达到创造人民更加美好生活的宏伟目标！`;
+        document.getElementById('extra-note').innerHTML = extra.replace('号外！家庭联产承包责任制卓有成效！', '<span class="font-bold text-lg">号外！家庭联产承包责任制卓有成效！</span>');
       } catch (e) {
         console.warn('保存历史总分失败', e);
       }

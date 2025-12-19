@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>码农的田地</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6366f1',
+                        secondary: '#f43f5e',
+                        success: '#10b981',
+                        warning: '#f59e0b',
+                        neutral: '#f3f4f6',
+                        'neutral-dark': '#374151'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-up': 'slideUp 0.5s ease-in-out',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .card-hover {
+                @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+            }
+            .answer-btn {
+                @apply w-full p-4 rounded-lg text-left transition-all duration-300 border-2 border-transparent;
+            }
+            .answer-btn:hover {
+                @apply border-primary bg-primary/5;
+            }
+            .answer-btn.selected {
+                @apply border-primary bg-primary/10 font-medium;
+            }
+            .progress-bar {
+                @apply h-2 bg-gray-200 rounded-full overflow-hidden;
+            }
+            .progress-value {
+                @apply h-full bg-gradient-to-r from-primary to-secondary transition-all duration-500;
+            }
+            .bottom-feedback {
+                @apply fixed bottom-0 left-0 right-0 bg-white shadow-lg p-4 mx-4 rounded-t-2xl transform transition-transform duration-300 translate-y-full;
+                max-width: 3xl;
+                margin-left: auto;
+                margin-right: auto;
+            }
+            .bottom-feedback.show {
+                @apply translate-y-0;
+            }
+            .feedback-close {
+                @apply absolute top-3 right-3 text-gray-500 hover:text-gray-700 cursor-pointer;
+            }
+            .key-hint {
+                @apply text-gray-500 text-sm mt-6 italic;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans pb-24">
+    <!-- Background Image -->
+    <div class="fixed inset-0 z-0 opacity-10 pointer-events-none">
+        <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/7a0847ddcf634450b9a41d507da2e9e8~tplv-a9rns2rl98-image.image?rcl=202510132321165F8E613CD5DF259E1A9B&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1762960888&x-signature=I3WqlPY%2BkU3gt9W8qda5ussiUWs%3D" 
+             alt="Background" class="w-full h-full object-cover">
+    </div>
+
+    <!-- Main Container -->
+    <div class="relative z-10 max-w-3xl mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-neutral-dark mb-2 text-shadow">码地分配调查问卷</h1>
+            <p class="text-gray-600">回答以下问题，获得码地</p>
+            
+            <!-- Progress Bar -->
+            <div class="mt-6 progress-bar">
+                <div id="progress-bar" class="progress-value" style="width: 0%"></div>
+            </div>
+            <div class="flex justify-between mt-2 text-sm text-gray-500">
+                <span>问题 <span id="current-question">1</span>/8</span>
+                <span id="completion-status">0%</span>
+            </div>
+        </header>
+
+        <!-- Quiz Container -->
+        <div id="quiz-container" class="space-y-8">
+            <!-- Questions will be dynamically inserted here -->
+        </div>
+
+        <!-- Result Container (Initially Hidden) -->
+        <div id="result-container" class="mt-8 p-6 rounded-xl bg-white shadow-md hidden">
+            <h2 class="text-2xl font-bold text-center mb-6">码地分配结果</h2>
+            <div id="result-content" class="space-y-4">
+                <!-- Result content will be dynamically inserted here -->
+            }
+        </div>
+    </div>
+
+    <!-- 底部反馈区域 -->
+    <div id="bottom-feedback" class="bottom-feedback">
+        <div class="feedback-close" onclick="hideFeedback()">
+            <i class="fa fa-times"></i>
+        </div>
+        <h3 class="text-lg font-medium mb-2 text-primary">弹窗</h3>
+        <p id="bottom-feedback-text" class="text-gray-700"></p>
+        <div class="mt-4 text-center">
+            <button id="next-question-btn" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+                继续
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Quiz data
+        const quizData = [
+            {
+                id: 1,
+                question: "您认为您现在“耕种”的土地的经营权是谁的？",
+                answers: [
+                    {
+                        text: "地主",
+                        feedback: "连续多日进行思想教育，精力-16K",
+                        energy: -16
+                    },
+                    {
+                        text: "自己",
+                        feedback: "码地+16K",
+                        codeLand: 16
+                    },
+                    {
+                        text: "国家",
+                        feedback: "纠正思想，精力-4K",
+                        energy: -4
+                    }
+                ]
+            },
+            {
+                id: 2,
+                question: "与家庭联产承包责任制推行前相比，您现在码地的积极性是否提高了？",
+                answers: [
+                    {
+                        text: "现在为自己干活，积极性当然提高了",
+                        feedback: "码地+16K",
+                        codeLand: 16
+                    },
+                    {
+                        text: "咋改革都那样，没啥大变化",
+                        feedback: "普及知识，精力-8K",
+                        energy: -8
+                    },
+                    {
+                        text: "感觉压力变大了，更不想工作了",
+                        feedback: "思想教育，精力-8K",
+                        energy: -8
+                    }
+                ]
+            },
+            {
+                id: 3,
+                question: "家庭经济条件改变后，您对教育的看法是：",
+                answers: [
+                    {
+                        text: "读的书多些，以后人生的选择也会多些",
+                        feedback: "码地+16K",
+                        codeLand: 16
+                    },
+                    {
+                        text: "读书有个啥用，早晚要下地干活",
+                        feedback: "思想教育，精力-8K",
+                        energy: -8
+                    },
+                    {
+                        text: "能识个字、算个数就行了",
+                        feedback: "思想教育，精力-8K",
+                        energy: -8
+                    }
+                ]
+            },
+            {
+                id: 4,
+                question: "在决定地里种什么时，你会：",
+                answers: [
+                    {
+                        text: "看邻居种什么我就种什么",
+                        feedback: "思想教育，精力-4K",
+                        energy: -4
+                    },
+                    {
+                        text: "自己当主人，根据市场需求和家庭需要，自主决定种植品种",
+
+                        feedback: " 码地+16K",
+                        codeLand: 16
+                    },
+                    {
+                        text: "完全由政府下达的统购计划来决定",
+                        feedback: "纠正思想，精力-4K",
+                        energy: -4
+                    }
+                ]
+            },
+            {
+                id: 5,
+                question: "你对于“致富”的观点是：",
+                answers: [
+                    {
+                        text: "致富是资本主义思想，越穷越光荣",
+                        feedback: "大力思想教育！！！精力-16K",
+                        energy: -16
+                    },
+                    {
+                        text: "只要勤劳肯干、善于经营，致富是光荣的",
+                        feedback: "码地+16K",
+                        codeLand: 16
+                    },
+                    {
+                        text: "致富全靠运气或一个当干部的亲戚",
+                        feedback: "大力进行思想教育！！！精力-16K",
+                        energy: -16
+                    }
+                ]
+            },
+            {
+                id: 6,
+                question: "你认为一个家庭生活水平的提高靠什么?",
+                answers: [
+                    {
+                        text: "主要靠国家的补贴和救济",
+                        feedback: "纠正思想，精力-16K",
+                        energy: -16
+                    },
+                    {
+                        text: "主要靠全家人的共同努力",
+                        feedback: "码地+16K",
+                        codeLand: 16
+                    },
+                    {
+                        text: "主要靠神仙保佑",
+                        feedback: "学习科学知识，精力-16K",
+                        energy: -16
+                    }
+                ]
+            },
+            {
+                id: 7,
+                question: "当遇到农业中的困难(如天灾、病虫害)时，你会：",
+                answers: [
+                    {
+                        text: "俺能干个啥，等国家救济就完事了",
+                        feedback: "思想教育，精力-16K",
+                        energy: -16
+                    },
+                    {
+                        text: "把土地抛荒，进城打工去",
+                        feedback: "思想教育，精力-16K",
+                        energy: -16
+                    },
+                    {
+                        text: "自己想办法克服，追求新方法",
+                        feedback: "码地+16K",
+                        codeLand: 16
+                    }
+                ]
+            },
+            {
+                id: 8,
+                question: "您与邻居的关系与“大集体”时代相比，有什么变化？",
+                answers: [
+                    {
+                        text: "经济上更独立，但农忙时互助合作更实在有效了",
+                        feedback: "码地+16K",
+                        codeLand: 16
+                    },
+                    {
+                        text: "更紧张了，邻居总跟我争水争地",
+                        feedback: "跟邻居缓和关系，精力-4K",
+                        energy: -4
+                    },
+                    {
+                        text: "感觉跟过去差不多，没啥变化",
+                        feedback: "思想教育，精力-4K",
+                        energy: -4
+                    }
+                ]
+            }
+        ];
+
+        // Global variables
+        let userAnswers = [];
+        let currentQuestionIndex = 0;
+        let selectedFeedback = "";
+        const initialCodeLand = 0; // 初始码地值
+        const initialEnergy = 128; // 初始精力值
+        let isApproved = false; // 记录是否通过
+
+        // DOM Elements
+        const quizContainer = document.getElementById('quiz-container');
+        const resultContainer = document.getElementById('result-container');
+        const resultContent = document.getElementById('result-content');
+        const progressBar = document.getElementById('progress-bar');
+        const currentQuestionSpan = document.getElementById('current-question');
+        const completionStatusSpan = document.getElementById('completion-status');
+        const bottomFeedback = document.getElementById('bottom-feedback');
+        const bottomFeedbackText = document.getElementById('bottom-feedback-text');
+        const nextQuestionBtn = document.getElementById('next-question-btn');
+
+        // 键盘事件监听
+        document.addEventListener('keydown', function(event) {
+            // 只有在结果页面且按Enter键才触发
+            if (event.key === 'Enter' && !quizContainer.classList.contains('hidden')) {
+                return;
+            }
+            
+            if (event.key === 'Enter' && !resultContainer.classList.contains('hidden')) {
+                if (isApproved) {
+                    // 码地小于等于精力时跳转到下一个游戏
+                    // 请将此处的URL替换为你的游戏文件地址
+                    window.location.href = "../subweb/multi-games-reset-on-next.html";
+                } else {
+                    // 码地大于精力时返回主页
+                    // 请将此处的URL替换为你的主页文件地址
+                    window.location.href = "../index.html";
+                }
+            }
+        });
+
+        // Initialize the quiz
+        function initQuiz() {
+            renderQuestion(currentQuestionIndex);
+            updateProgress();
+        }
+
+        // Render a question
+        function renderQuestion(index) {
+            hideFeedback();
+            
+            const question = quizData[index];
+            const questionElement = document.createElement('div');
+            questionElement.className = 'bg-white rounded-xl shadow-md p-6 animate-fade-in';
+            questionElement.innerHTML = `
+                <h2 class="text-2xl font-bold mb-6">${question.id}. ${question.question}</h2>
+                <div class="space-y-4" id="answers-container-${question.id}">
+                    <!-- Answers will be inserted here -->
+                </div>
+            `;
+            
+            quizContainer.innerHTML = '';
+            quizContainer.appendChild(questionElement);
+            
+            // Render answers
+            const answersContainer = document.getElementById(`answers-container-${question.id}`);
+            question.answers.forEach((answer, answerIndex) => {
+                const answerButton = document.createElement('button');
+                answerButton.className = 'answer-btn';
+                
+                if (userAnswers[index] === answerIndex) {
+                    answerButton.classList.add('selected');
+                }
+                
+                answerButton.innerHTML = `
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0 h-6 w-6 rounded-full border-2 border-gray-300 flex items-center justify-center mr-3 mt-0.5">
+                            <span class="answer-indicator ${userAnswers[index] === answerIndex ? 'text-primary' : 'text-gray-400'}">
+                                ${String.fromCharCode(65 + answerIndex)}
+                            </span>
+                        </div>
+                        <div>
+                            <p>${answer.text}</p>
+                        </div>
+                    </div>
+                `;
+                
+                answerButton.addEventListener('click', () => {
+                    userAnswers[index] = answerIndex;
+                    selectedFeedback = answer.feedback;
+                    
+                    document.querySelectorAll('.answer-btn').forEach(btn => {
+                        btn.classList.remove('selected');
+                        btn.querySelector('.answer-indicator').classList.remove('text-primary');
+                        btn.querySelector('.answer-indicator').classList.add('text-gray-400');
+                    });
+                    
+                    answerButton.classList.add('selected');
+                    answerButton.querySelector('.answer-indicator').classList.remove('text-gray-400');
+                    answerButton.querySelector('.answer-indicator').classList.add('text-primary');
+                    
+                    showFeedback(answer.feedback);
+                });
+                
+                answersContainer.appendChild(answerButton);
+            });
+        }
+
+        // 显示底部反馈
+        function showFeedback(feedbackText) {
+            bottomFeedbackText.textContent = feedbackText;
+            bottomFeedback.classList.add('show');
+        }
+
+        // 隐藏底部反馈
+        function hideFeedback() {
+            bottomFeedback.classList.remove('show');
+        }
+
+        // Update progress bar
+        function updateProgress() {
+            const progress = ((currentQuestionIndex + 1) / quizData.length) * 100;
+            progressBar.style.width = `${progress}%`;
+            currentQuestionSpan.textContent = currentQuestionIndex + 1;
+            completionStatusSpan.textContent = `${Math.round(progress)}%`;
+        }
+
+        // 下一题按钮点击事件
+        nextQuestionBtn.addEventListener('click', () => {
+            if (currentQuestionIndex < quizData.length - 1) {
+                currentQuestionIndex++;
+                renderQuestion(currentQuestionIndex);
+                updateProgress();
+            } else {
+                showResult();
+            }
+        });
+
+        // 计算码地总数
+        function calculateCodeLand() {
+            let total = initialCodeLand;
+            userAnswers.forEach((answerIndex, questionIndex) => {
+                const answer = quizData[questionIndex].answers[answerIndex];
+                if (answer.codeLand) {
+                    total += answer.codeLand;
+                }
+            });
+            return total;
+        }
+
+        // 计算精力总数
+        function calculateEnergy() {
+            let total = initialEnergy;
+            userAnswers.forEach((answerIndex, questionIndex) => {
+                const answer = quizData[questionIndex].answers[answerIndex];
+                if (answer.energy) {
+                    total += answer.energy;
+                }
+            });
+            return total;
+        }
+
+        // Show quiz result
+        function showResult() {
+            quizContainer.classList.add('hidden');
+            hideFeedback();
+            
+            // 计算码地和精力总数
+            const totalCodeLand = calculateCodeLand();
+            const totalEnergy = calculateEnergy();
+            // 判断是否批准
+            isApproved = totalCodeLand <= totalEnergy && totalCodeLand > 0; 
+            
+            // 生成结果内容
+            resultContent.innerHTML = `
+                <div class="text-center mb-8">
+                    <div class="inline-block p-4 rounded-full ${isApproved ? 'bg-success' : 'bg-secondary'} text-white text-4xl mb-6">
+                        <i class="${isApproved ? 'fa fa-check-circle' : 'fa fa-exclamation-circle'}"></i>
+                    </div>
+                    
+                    <h3 class="text-3xl font-bold ${isApproved ? 'text-success' : 'text-secondary'} mb-8">
+                        ${isApproved ? '恭喜你！通过政审申请到了：' : '码地浪费，不予批准'}
+                    </h3>
+                    
+                    ${isApproved ? `
+                        <div class="grid grid-cols-2 gap-8 max-w-md mx-auto">
+                            <div class="p-6 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl">
+                                <p class="text-gray-600 mb-2">码地</p>
+                                <p class="text-5xl font-bold text-primary">${totalCodeLand}K</p>
+                            </div>
+                            <div class="p-6 bg-gradient-to-br from-secondary/10 to-secondary/20 rounded-xl">
+                                <p class="text-gray-600 mb-2">精力</p>
+                                <p class="text-5xl font-bold text-secondary">${totalEnergy}K</p>
+                            </div>
+                        </div>
+                        <p class="mt-10 text-xl font-medium text-gray-700">开始码地吧！</p>
+                        <p class="key-hint">按Enter键开始码地</p>
+                    ` : `
+                        <div class="p-6 bg-gray-50 rounded-xl max-w-md mx-auto">
+                            <div class="flex justify-between items-center mb-4">
+                                <p class="text-gray-600">码地数量</p>
+                                <p class="text-xl font-bold text-primary">${totalCodeLand}K</p>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <p class="text-gray-600">剩余精力</p>
+                                <p class="text-xl font-bold text-secondary">${totalEnergy}K</p>
+                            </div>
+                        </div>
+                        <p class="mt-10 text-xl font-medium text-gray-700">您的码地需求超过了可分配精力</p>
+                        <p class="key-hint">按Enter键返回主页</p>
+                    `}
+                </div>
+            `;
+            
+            resultContainer.classList.remove('hidden');
+
+            // 保存问卷得分以供分数统计页面使用（使用数值，不带K）
+            try {
+                localStorage.setItem('quizScore', String(totalCodeLand));
+            } catch (e) {
+                console.warn('无法保存 quizScore 到 localStorage', e);
+            }
+        }
+
+        // 初始化问卷（等待 DOMContentLoaded 更稳健）
+        document.addEventListener('DOMContentLoaded', initQuiz);
+    </script>
+</body>
+</html>

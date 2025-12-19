@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>游戏结束画面</title>
+  <!-- Tailwind CSS v3 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome -->
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <!-- GSAP 动画库 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#00f0ff',
+            secondary: '#7928ca',
+            accent: '#ff0080',
+            dark: '#0f172a',
+            light: '#f8fafc'
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            game: ['Orbitron', 'sans-serif']
+          },
+          animation: {
+            'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'float': 'float 3s ease-in-out infinite',
+            'glow': 'glow 2s ease-in-out infinite alternate'
+          },
+          keyframes: {
+            float: {
+              '0%, 100%': { transform: 'translateY(0)' },
+              '50%': { transform: 'translateY(-10px)' }
+            },
+            glow: {
+              '0%': { filter: 'brightness(1) drop-shadow(0 0 5px rgba(0, 240, 255, 0.7))' },
+              '100%': { filter: 'brightness(1.2) drop-shadow(0 0 15px rgba(0, 240, 255, 0.9))' }
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .text-shadow {
+        text-shadow: 0 0 10px rgba(0, 240, 255, 0.7), 0 0 20px rgba(0, 240, 255, 0.5);
+      }
+      .text-shadow-accent {
+        text-shadow: 0 0 10px rgba(255, 0, 128, 0.7), 0 0 20px rgba(255, 0, 128, 0.5);
+      }
+      .bg-glass {
+        background: rgba(15, 23, 42, 0.7);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(0, 240, 255, 0.2);
+      }
+      .border-glow {
+        box-shadow: 0 0 10px rgba(0, 240, 255, 0.5), inset 0 0 10px rgba(0, 240, 255, 0.3);
+      }
+      .scroll-glow {
+        filter: drop-shadow(0 0 5px rgba(0, 240, 255, 0.7));
+      }
+      .scrollbar-hidden::-webkit-scrollbar {
+        display: none;
+      }
+      .scrollbar-hidden {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+    }
+  </style>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap');
+    
+    body {
+      overflow: hidden;
+      font-family: 'Inter', sans-serif;
+    }
+    
+    .score-counter {
+      font-family: 'Orbitron', sans-serif;
+    }
+    
+    .rank-item {
+      transition: all 0.3s ease;
+    }
+    
+    .rank-item:hover {
+      transform: scale(1.02);
+      background: rgba(0, 240, 255, 0.1);
+    }
+    
+    .rank-item.current-player {
+      animation: highlight 2s ease-in-out infinite alternate;
+    }
+    
+    @keyframes highlight {
+      from {
+        box-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+      }
+      to {
+        box-shadow: 0 0 20px rgba(0, 240, 255, 0.8), 0 0 30px rgba(0, 240, 255, 0.5);
+      }
+    }
+    
+    .medal {
+      transition: all 0.3s ease;
+    }
+    
+    .medal:hover {
+      transform: scale(1.1) rotate(5deg);
+    }
+    
+    .btn-3d {
+      position: relative;
+      transition: all 0.2s ease;
+      transform-style: preserve-3d;
+    }
+    
+    .btn-3d:before {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      left: 0;
+      top: 0;
+      background: rgba(0, 0, 0, 0.3);
+      transform: translateZ(-1px) scale(0.9);
+      filter: blur(10px);
+      border-radius: inherit;
+      transition: all 0.2s ease;
+    }
+    
+    .btn-3d:hover {
+      transform: translateY(-5px);
+    }
+    
+    .btn-3d:hover:before {
+      transform: translateZ(-1px) scale(0.85);
+      filter: blur(15px);
+    }
+    
+    .btn-3d:active {
+      transform: translateY(0);
+    }
+    
+    .btn-3d:active:before {
+      transform: translateZ(-1px) scale(0.95);
+      filter: blur(5px);
+    }
+    
+    .star {
+      animation: twinkle 2s ease-in-out infinite;
+    }
+    
+    @keyframes twinkle {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(0.9); }
+    }
+    
+    .star:nth-child(2) { animation-delay: 0.3s; }
+    .star:nth-child(3) { animation-delay: 0.6s; }
+    .star:nth-child(4) { animation-delay: 0.9s; }
+    .star:nth-child(5) { animation-delay: 1.2s; }
+    
+    .background-animation {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      z-index: -1;
+    }
+    
+    .particle {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(0, 240, 255, 0.7);
+      box-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+      animation: float 3s infinite ease-in-out;
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0) translateX(0); }
+      50% { transform: translateY(-20px) translateX(10px); }
+    }
+    
+    .rank-up-animation {
+      animation: rankUp 1s ease-out forwards;
+    }
+    
+    @keyframes rankUp {
+      0% { transform: translateY(0); }
+      50% { transform: translateY(-30px) rotate(10deg); }
+      100% { transform: translateY(0); }
+    }
+    
+    .score-popup {
+      position: absolute;
+      color: #00f0ff;
+      font-weight: bold;
+      font-family: 'Orbitron', sans-serif;
+      animation: scorePopup 1s ease-out forwards;
+      pointer-events: none;
+    }
+    
+    @keyframes scorePopup {
+      0% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(-50px); }
+    }
+  </style>
+</head>
+<body class="bg-dark text-light min-h-screen flex flex-col items-center justify-center p-4">
+  <!-- 背景图 -->
+  <div class="fixed inset-0 z-0">
+    <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/9737b0c79a734991a18e22b1e3dec730~tplv-a9rns2rl98-image.image?rcl=202510132358500A9696747980D44408E4&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1762963141&x-signature=RWqGcqwIAuB28tgO%2F10rS37SUsM%3D" 
+         alt="游戏背景" 
+         class="w-full h-full object-cover opacity-60">
+  </div>
+  
+  <!-- 背景动画 -->
+  <div class="background-animation" id="particles"></div>
+  
+  <!-- 主容器 -->
+  <div class="container mx-auto max-w-6xl z-10">
+    <!-- 游戏标题 -->
+    <div class="text-center mb-8">
+      <h1 class="text-4xl md:text-6xl font-bold text-primary text-shadow animate-glow">
+        游戏结束
+      </h1>
+      <p class="text-lg md:text-xl text-gray-300 mt-2">你的冒险已经结束</p>
+    </div>
+    
+    <!-- 主要内容区 -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- 左侧：分数结算 -->
+      <div class="lg:col-span-1">
+        <div class="bg-glass rounded-xl p-6 border border-primary/30 border-glow">
+          <h2 class="text-2xl font-bold text-center mb-6 text-primary">分数结算</h2>
+          
+          <!-- 总分 -->
+          <div class="flex justify-center mb-8">
+            <div class="relative">
+              <img src="https://p26-doubao-search-sign.byteimg.com/labis/99124b596793951866c017d74f303625~tplv-be4g95zd3a-image.jpeg?rk3s=542c0f93&x-expires=1765555146&x-signature=v71%2BWWOUnlqWNv4l5QqkZgKxIdw%3D" 
+                   alt="奖杯" 
+                   class="w-32 h-32 object-contain medal animate-float">
+              <div class="absolute -top-4 -right-4 bg-accent text-white rounded-full text-xl font-bold rounded-full w-16 h-16 flex items-center justify-center border-4 border-white shadow-lg">
+                #3
+              </div>
+            </div>
+          </div>
+          
+          <!-- 总分 -->
+          <div class="text-center mb-6">
+            <p class="text-gray-400 text-lg">最终得分</p>
+            <p class="text-5xl font-bold text-primary score-counter-counter" id="total-score">0</p>
+          </div>
+          
+          <!-- 分数明细 -->
+          <div class="space-y-3">
+            <div class="flex justify-between items-center p-3 bg-dark/50 rounded-lg">
+              <span class="flex items-center">
+                <i class="fa fa-bolt text-yellow-400 mr-2"></i>
+                <span>击杀数</span>
+              </span>
+              <span class="text-xl font-semibold score-detail" data-value="1250">0</span>
+            </div>
+            <div class="flex justify-between items-center p-3 bg-dark/50 rounded-lg">
+              <span class="flex items-center">
+                <i class="fa fa-map-signs text-green-400 mr-2"></i>
+                <span>关卡数</span>
+              </span>
+              <span class="text-xl font-semibold score-detail" data-value="500">0</span>
+            </div>
+            <div class="flex justify-between items-center p-3 bg-dark/50 rounded-lg">
+              <span class="flex items-center">
+                <i class="fa fa-clock-o text-blue-400 mr-2"></i>
+                <span>时间奖励</span>
+              </span>
+              <span class="text-xl font-semibold score-detail" data-value="750">0</span>
+            </div>
+            <div class="flex justify-between items-center p-3 bg-dark/50 rounded-lg">
+              <span class="flex items-center">
+                <i class="fa fa-star text-yellow-400 mr-2"></i>
+                <span>星星收集</span>
+              </span>
+              <span class="text-xl font-semibold score-detail" data-value="300">0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 中间和右侧：排行榜 -->
+      <div class="lg:col-span-2">
+        <div class="bg-glass rounded-xl p-6 border border-primary/30 border-glow h-full">
+          <h2 class="text-2xl font-bold text-center mb-6 text-primary">全球排行榜</h2>
+          
+          <!-- 排行榜标签 -->
+          <div class="flex justify-center mb-6 space-x-4">
+            <button class="px-4 py-2 bg-primary/20 text-primary rounded-full px-6 py-2 font-medium border border-primary/50 active">
+              全球排行
+            </button>
+            <button class="px-4 py-2 bg-dark/50 text-gray-300 rounded-full px-6 py-2 font-medium border border-gray-700">
+              好友排行
+            </button>
+          </div>
+          
+          <!-- 排行榜列表 -->
+          <div class="overflow-y-auto scrollbar-hidden h-[400px] pr-2">
+            <div class="space-y-3" id="leaderboard-list">
+              <!-- 排行榜内容将通过JavaScript动态生成 -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 功能按钮区 -->
+    <div class="mt-8 flex justify-center space-x-6">
+      <button class="btn-3d bg-primary hover:bg-primary/80 text-dark-800 font-bold py-3 px-8 rounded-lg text-lg transition-all duration-300 flex items-center">
+        <i class="fa fa-refresh mr-2"></i> 再来一局
+      </button>
+      <button class="btn-3d bg-secondary hover:bg-secondary/80 text-white font-bold py-3 px-8 rounded-lg text-lg transition-all duration-300 flex items-center" id="share-btn">
+        <i class="fa fa-share-alt mr-2"></i> 分享成绩
+      </button>
+      <button class="btn-3d bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-8 rounded-lg text-lg transition-all duration-300 flex items-center">
+        <i class="fa fa-home mr-2"></i> 返回主页
+      </button>
+    </div>
+  </div>
+  
+  <!-- 分享弹窗 -->
+  <div id="share-modal" class="fixed fixed inset-0 bg-black-900/80 z-50 flex items-center justify-center hidden">
+    <div class="bg-glass rounded-xl p-6 max-w-md w-full mx-4 border border-primary/30 border-glow">
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="text-2xl font-bold text-primary">分享你的成绩</h3>
+        <button id="close-share" class="text-gray-400 hover:text-white text-xl">
+          <i class="fa fa-times"></i>
+        </button>
+      </div>
+      
+      <div class="text-center mb-6">
+        <p class="text-xl mb-2">你获得了 <span class="text-primary font-bold">8500</span> 分！</p>
+        <p class="text-gray-300">在全球排名第 <span class="text-accent font-bold">3</span> 位</p>
+      </div>
+      
+      <div class="flex justify-center space-x-4 mb-6">
+        <button class="btn-3d bg-[#1877f2] hover:bg-[#1877f2]/80 text-white w-12 h-12 rounded-full flex items-center justify-center">
+          <i class="fa fa-facebook"></i>
+        </button>
+        <button class="btn-3d bg-[#1da1f2] hover:bg-[#1da1f2]/80 text-white w-12 h-12 rounded-full flex items-center justify-center">
+          <i class="fa fa-twitter"></i>
+        </button>
+        <button class="btn-3d bg-[#25d366] hover:bg-[#25d366]/80 text-white w-12 h-12 rounded-full flex items-center justify-center">
+          <i class="fa fa-whatsapp"></i>
+        </button>
+        <button class="btn-3d bg-[#0a66c2] hover:bg-[#0a66c2]/80 text-white w-12 h-12 rounded-full flex items-center justify-center">
+          <i class="fa fa-linkedin"></i>
+        </button>
+      </div>
+      
+      <div class="relative">
+        <input type="text" value="https://game.example.com/share?id=abc123" 
+               class="w-full bg-dark/50 border border-gray-700 rounded-lg p-3 text-white"
+               readonly>
+        <button class="absolute right-2 top-2 bg-primary text-white px-3 py-1 rounded-md text-sm">
+          复制
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 模拟排行榜数据
+    const leaderboardData = [
+      { rank: 1, name: "玩家12345", score: 12500, avatar: "https://ui-avatars.com/api/?name=玩家12345&background=random" },
+      { rank: 2, name: "游戏达人", score: 10200, avatar: "https://ui-avatars.com/api/?name=游戏达人&background=random" },
+      { rank: 3, name: "你", score: 8500, avatar: "https://ui-avatars.com/api/?name=你&background=random", isCurrentPlayer: true },
+      { rank: 4, name: "新手玩家", score: 7800, avatar: "https://ui-avatars.com/api/?name=新手玩家&background=random" },
+      { rank: 5, name: "老玩家", score: 7200, avatar: "https://ui-avatars.com/api/?name=老玩家&background=random" },
+      { rank: 6, name: "游戏迷", score: 6500, avatar: "https://ui-avatars.com/api/?name=游戏迷&background=random" },
+      { rank: 7, name: "休闲玩家", score: 5900, avatar: "https://ui-avatars.com/api/?name=休闲玩家&background=random" },
+      { rank: 8, name: "高手", score: 5400, avatar: "https://ui-avatars.com/api/?name=高手&background=random" },
+      { rank: 9, name: "菜鸟", score: 4800, avatar: "https://ui-avatars.com/api/?name=菜鸟&background=random" },
+      { rank: 10, name: "传说", score: 4200, avatar: "https://ui-avatars.com/api/?name=传说&background=random" },
+      { rank: 11, name: "神话", score: 3800, avatar: "https://ui-avatars.com/api/?name=神话&background=random" },
+      { rank: 12, name: "传奇", score: 3500, avatar: "https://ui-avatars.com/api/?name=传奇&background=random" },
+      { rank: 13, name: "史诗", score: 3200, avatar: "https://ui-avatars.com/api/?name=史诗&background=random" },
+      { rank: 14, name: "稀有", score: 2900, avatar: "https://ui-avatars.com/api/?name=稀有&background=random" },
+      { rank: 15, name: "普通", score: 2500, avatar: "https://ui-avatars.com/api/?name=普通&background=random" }
+    ];
+    
+    // DOM 元素
+    const leaderboardList = document.getElementById('leaderboard-list');
+    const totalScoreElement = document.getElementById('total-score');
+    const scoreDetailElements = document.querySelectorAll('.score-detail');
+    const shareBtn = document.getElementById('share-btn');
+    const shareModal = document.getElementById('share-modal');
+    const closeShareBtn = document.getElementById('close-share');
+    const particlesContainer = document.getElementById('particles');
+    
+    // 初始化页面
+    document.addEventListener('DOMContentLoaded', () => {
+      createParticles();
+      renderLeaderboard();
+      animateScores();
+      setupEventListeners();
+    });
+    
+    // 创建背景粒子
+    function createParticles() {
+      for (let i = 0; i < 50; i++) {
+        const particle = document.createElement('div');
+        particle.classList.add('particle');
+        
+        // 随机大小
+        const size = Math.random() * 5 + 2;
+        particle.style.width = `${size}px`;
+        particle.style.height = `${size}px`;
+        
+        // 随机位置
+        particle.style.left = `${Math.random() * 100}%`;
+        particle.style.top = `${Math.random() * 100}%`;
+        
+        // 随机透明度
+        particle.style.opacity = Math.random() * 0.5 + 0.3;
+        
+        // 随机动画延迟
+        particle.style.animationDelay = `${Math.random() * 5}s`;
+        
+        particlesContainer.appendChild(particle);
+      }
+    }
+    
+    // 渲染排行榜
+    function renderLeaderboard() {
+      leaderboardList.innerHTML = '';
+      
+      leaderboardData.forEach(player => {
+        const rankItem = document.createElement('div');
+        rankItem.classList.add('rank-item', 'flex', 'items-center', 'p-3', 'bg-dark/50', 'rounded-lg');
+        
+        if (player.isCurrentPlayer) {
+          rankItem.classList.add('current-player', 'border', 'border-primary');
+        }
+        
+        // 排名
+        const rankElement = document.createElement('div');
+        rankElement.classList.add('w-10', 'h-10', 'rounded-full', 'flex', 'items-center', 'justify-center', 'font-bold', 'mr-3');
+        
+        if (player.rank === 1) {
+          rankElement.classList.add('bg-yellow-500', 'text-white');
+        } else if (player.rank === 2) {
+          rankElement.classList.add('bg-gray-400', 'text-white');
+        } else if (player.rank === 3) {
+          rankElement.classList.add('bg-amber-700', 'text-white');
+        } else {
+          rankElement.classList.add('bg-gray-800', 'text-gray-300');
+        }
+        
+        rankElement.textContent = player.rank;
+        
+        // 头像
+        const avatarElement = document.createElement('img');
+        avatarElement.src = player.avatar;
+        avatarElement.alt = player.name;
+        avatarElement.classList.add('w-12', 'h-12', 'rounded-full', 'mr-4', 'border', 'border-gray-700');
+        
+        // 名称
+        const nameElement = document.createElement('div');
+        nameElement.classList.add('flex-1');
+        
+        const nameText = document.createElement('div');
+        nameText.classList.add('font-medium');
+        nameText.textContent = player.name;
+        
+        const rankText = document.createElement('div');
+        rankText.classList.add('text-xs', 'text-gray-400');
+        rankText.textContent = `全球排名 #${player.rank}`;
+        
+        nameElement.appendChild(nameText);
+        nameElement.appendChild(rankText);
+        
+        // 分数
+        const scoreElement = document.createElement('div');
+        scoreElement.classList.add('text-right');
+        
+        const scoreText = document.createElement('div');
+        scoreText.classList.add('font-bold', 'text-primary', 'score-counter');
+        scoreText.textContent = player.score.toLocaleString();
+        
+        const scoreChange = document.createElement('div');
+        scoreChange.classList.add('text-xs', 'text-green-400', 'flex', 'items-center', 'justify-end');
+        scoreChange.innerHTML = `<i class="fa fa-arrow-up mr-1"></i> +${Math.floor(Math.random() * 1000).toLocaleString()}`;
+        
+        scoreElement.appendChild(scoreText);
+        scoreElement.appendChild(scoreChange);
+        
+        // 组装
+        rankItem.appendChild(rankElement);
+        rankItem.appendChild(avatarElement);
+        rankItem.appendChild(nameElement);
+        rankItem.appendChild(scoreElement);
+        
+        leaderboardList.appendChild(rankItem);
+        
+        // 添加动画效果
+        gsap.from(rankItem, {
+          y: 20,
+          opacity: 0,
+          duration: 0.5,
+          delay: player.rank * 0.1,
+          ease: 'power2.out'
+        });
+      });
+    }
+    
+    // 分数动画
+    function animateScores() {
+      // 计算总分
+      let totalScore = 0;
+      scoreDetailElements.forEach(element => {
+        totalScore += parseInt(element.dataset.value);
+      });
+      
+      // 动画显示分数明细
+      scoreDetailElements.forEach((element, index) => {
+        const targetValue = parseInt(element.dataset.value);
+        gsap.to(element, {
+          innerText: targetValue,
+          duration: 1.5,
+          delay: 0.3 * index,
+          snap: { innerText: 1 },
+          ease: 'power2.out',
+          onUpdate: function() {
+            element.textContent = Math.round(this.targets()[0].innerText).toLocaleString();
+            
+            // 更新总分
+            let currentTotal = 0;
+            scoreDetailElements.forEach(el => {
+              currentTotal += parseInt(el.innerText.replace(/,/g, ''));
+            });
+            totalScoreElement.textContent = currentTotal.toLocaleString();
+            
+            // 创建分数弹出效果
+            if (Math.random() > 0.7) {
+              createScorePopup(element);
+            }
+          }
+        });
+      });
+      
+      // 动画显示总分
+      gsap.to(totalScoreElement, {
+        innerText: totalScore,
+        duration: 2,
+        delay: 0.5,
+        snap: { innerText: 1 },
+        ease: 'power2.out',
+        onUpdate: function() {
+          totalScoreElement.textContent = Math.round(this.targets()[0].innerText).toLocaleString();
+        }
+      });
+    }
+    
+    // 创建分数弹出效果
+    function createScorePopup(element) {
+      const popup = document.createElement('div');
+      popup.classList.add('score-popup');
+      
+      // 随机分数值
+      const value = `+${Math.floor(Math.random() * 100 + 50)}`;
+      popup.textContent = value;
+      
+      // 获取元素位置
+      const rect = element.getBoundingClientRect();
+      const containerRect = document.querySelector('.container').getBoundingClientRect();
+      
+      // 设置弹出位置
+      popup.style.left = `${rect.left - containerRect.left + Math.random() * 30 + 10}px`;
+      popup.style.top = `${rect.top - containerRect.top - 20}px`;
+      
+      // 添加到容器
+      document.querySelector('.container').appendChild(popup);
+      
+      // 动画结束后移除
+      setTimeout(() => {
+        popup.remove();
+      }, 1000);
+    }
+    
+    // 设置事件监听
+    function setupEventListeners() {
+      // 分享按钮
+      shareBtn.addEventListener('click', () => {
+        shareModal.classList.remove('hidden');
+        gsap.from(shareModal.querySelector('div'), {
+          scale: 0.8,
+          opacity: 0,
+          duration: 0.3,
+          ease: 'back.out(1.7)'
+        });
+      });
+      
+      // 关闭分享弹窗
+      closeShareBtn.addEventListener('click', () => {
+        gsap.to(shareModal.querySelector('div'), {
+          scale: 0.8,
+          opacity: 0,
+          duration: 0.2,
+          onComplete: () => {
+            shareModal.classList.add('hidden');
+          }
+        });
+      });
+      
+      // 点击弹窗外部关闭
+      shareModal.addEventListener('click', (e) => {
+        if (e.target === shareModal) {
+          closeShareBtn.click();
+        }
+      });
+      
+      // 按钮点击效果
+      document.querySelectorAll('.btn-3d').forEach(btn => {
+        btn.addEventListener('click', function() {
+          // 模拟按钮点击效果
+          this.style.transform = 'translateY(0)';
+          setTimeout(() => {
+            this.style.transform = '';
+          }, 100);
+          
+          // 如果是再来一局按钮，重新加载页面
+          if (this.textContent.includes('再来一局')) {
+            gsap.to(document.body, {
+              opacity: 0,
+              duration: 0.5,
+              onComplete: () => {
+                window.location.reload();
+              }
+            });
+          }
+        });
+      });
+      
+      // 排行榜切换
+      const rankTabs = document.querySelectorAll('.flex.justify-center.mb-6 button');
+      rankTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          // 移除所有活动状态
+          rankTabs.forEach(t => {
+            t.classList.remove('bg-primary/20', 'text-primary', 'border-primary/50');
+            t.classList.add('bg-dark/50', 'text-gray-300', 'border-gray-700');
+          });
+          
+          // 添加活动状态
+          tab.classList.remove('bg-dark/50', 'text-gray-300', 'border-gray-700');
+          tab.classList.add('bg-primary/20', 'text-primary', 'border-primary/50');
+          
+          // 如果切换到好友排行，模拟加载效果
+          if (tab.textContent.trim() === '好友排行') {
+            leaderboardList.innerHTML = '<div class="flex justify-center items-center py-10"><i class="fa fa-spinner fa-spin text-primary text-3xl"></i></div>';
+            
+            // 模拟加载延迟
+            setTimeout(() => {
+              // 创建好友排行数据（基于全球排行，但只显示部分）
+              const friendData = leaderboardData.filter((_, index) => index % 3 === 0).map((player, index) => {
+                return { ...player, rank: index + 1 };
+              });
+              
+              leaderboardList.innerHTML = '';
+              friendData.forEach(player => {
+                const rankItem = document.createElement('div');
+                rankItem.classList.add('rank-item', 'flex', 'items-center', 'p-3', 'bg-dark/50', 'rounded-lg');
+                
+                if (player.isCurrentPlayer) {
+                  rankItem.classList.add('current-player', 'border', 'border-primary');
+                }
+                
+                // 排名
+                const rankElement = document.createElement('div');
+                rankElement.classList.add('w-10', 'h-10', 'rounded-full', 'flex', 'items-center', 'justify-center', 'font-bold', 'mr-3');
+                
+                if (player.rank === 1) {
+                  rankElement.classList.add('bg-yellow-500', 'text-white');
+                } else if (player.rank === 2) {
+                  rankElement.classList.add('bg-gray-400', 'text-white');
+                } else if (player.rank === 3) {
+                  rankElement.classList.add('bg-amber-700', 'text-white');
+                } else {
+                  rankElement.classList.add('bg-gray-800', 'text-gray-300');
+                }
+                
+                rankElement.textContent = player.rank;
+                
+                // 头像
+                const avatarElement = document.createElement('img');
+                avatarElement.src = player.avatar;
+                avatarElement.alt = player.name;
+                avatarElement.classList.add('w-12', 'h-12', 'rounded-full', 'mr-4', 'border', 'border-gray-700');
+                
+                // 名称
+                const nameElement = document.createElement('div');
+                nameElement.classList.add('flex-1');
+                
+                const nameText = document.createElement('div');
+                nameText.classList.add('font-medium');
+                nameText.textContent = player.name;
+                
+                const rankText = document.createElement('div');
+                rankText.classList.add('text-xs', 'text-gray-400');
+                rankText.textContent = `好友排名 #${player.rank}`;
+                
+                nameElement.appendChild(nameText);
+                nameElement.appendChild(rankText);
+                
+                // 分数
+                const scoreElement = document.createElement('div');
+                scoreElement.classList.add('text-right');
+                
+                const scoreText = document.createElement('div');
+                scoreText.classList.add('font-bold', 'text-primary', 'score-counter');
+                scoreText.textContent = player.score.toLocaleString();
+                
+                const scoreChange = document.createElement('div');
+                scoreChange.classList.add('text-xs', 'text-green-400', 'flex', 'items-center', 'justify-end');
+                scoreChange.innerHTML = `<i class="fa fa-arrow-up mr-1"></i> +${Math.floor(Math.random() * 1000).toLocaleString()}`;
+                
+                scoreElement.appendChild(scoreText);
+                scoreElement.appendChild(scoreChange);
+                
+                // 组装
+                rankItem.appendChild(rankElement);
+                rankItem.appendChild(avatarElement);
+                rankItem.appendChild(nameElement);
+                rankItem.appendChild(scoreElement);
+                
+                leaderboardList.appendChild(rankItem);
+                
+                // 添加动画效果
+                gsap.from(rankItem, {
+                  y: 20,
+                  opacity: 0,
+                  duration: 0.5,
+                  delay: player.rank * 0.1,
+                  ease: 'power2.out'
+                });
+              });
+            }, 1000);
+          } else {
+            // 切换回全球排行
+            renderLeaderboard();
+          }
+        });
+      });
+    }
+  </script>
+</body>
+</html>

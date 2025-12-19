@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>码农的田地</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4F46E5',
+                        secondary: '#10B981',
+                        accent: '#F59E0B',
+                        dark: '#1F2937',
+                        light: '#F3F4F6'
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'fade-in': 'fadeIn 1s ease-in-out',
+                        'slide-up': 'slideUp 0.8s ease-out',
+                        'bounce-slow': 'bounce 2s infinite'
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            }
+            .btn-pulse {
+                animation: btnPulse 2s infinite;
+            }
+            @keyframes btnPulse {
+                0%, 100% { transform: scale(1); }
+                50% { transform: scale(1.05); }
+            }
+            .bg-gradient-game {
+                background: linear-gradient(135deg, #1F2937 0%, #374151 100%);
+            }
+            .star {
+                position: absolute;
+                background-color: white;
+                border-radius: 50%;
+                animation: twinkle 4s infinite ease-in-out;
+            }
+            
+            .rotate-30 {
+                transform: rotate(30deg);
+            }
+            
+            .rotate-150 {
+                transform: rotate(150deg);
+            }
+            @keyframes twinkle {
+                0%, 100% { opacity: 0.2; }
+                50% { opacity: 1; }
+            }
+        }
+        
+        body {
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+        
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+        
+        .screen.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .start-button {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .start-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 25px rgba(79, 70, 229, 0.7);
+        }
+        
+        .start-button:active {
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+<body class="bg-dark text-light font-sans">
+    <div class="relative w-full h-screen overflow-hidden">
+        <!-- Star background -->
+		<div id="stars" class="absolute w-full h-full pointer-events-none"></div>
+        
+        <!-- Start Screen -->
+        <div id="start-screen" class="screen active flex flex-col items-center justify-center h-full">
+            <h1 class="text-5xl md:text-7xl font-bold mb-12 animate-fade-in bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500 text-shadow">
+                码农的田地
+            </h1>
+            
+            <div id="start-button" class="start-button bg-gradient-to-r from-primary to-purple-600 rounded-full w-32 h-32 flex items items-center justify-center items-center items shadow shadow-lg animate-pulse-slow">
+                <div class="w-0 h-0 border-t-[20px] border-t-transparent border-b-[20px] border-b-transparent border-l-[30px] border-l-white"></div>
+            </div>
+            
+            <p class="mt-8 text-lg text-gray-300 animate-slide-up">点击开始码地</p>
+        </div>
+        
+        <!-- Instructions Screen -->
+        <div id="instructions-screen" class="screen flex flex-col items-center justify-center h-full p-6">
+            <!-- 左下角旋转图片 -->
+            <img src="image/Capture_20251007_143108.png" alt="装饰图片" class="absolute bottom-4 left-4 w-64 h-auto transform rotate-30 z-10">
+            <!-- 右上角旋转图片，50%在页面外 -->
+            <img src="image/Capture_20251007_143108.png" alt="装饰图片" class="absolute top-[-150px] right-[50px] w-64 h-auto transform rotate-150 z-10">
+            <div class="bg-dark/90 backdrop-blur-sm rounded-xl p-8 max-w-2xl w-full animate-fade-in border border-gray-700">
+                <h2 class="text-3xl font-bold text-center mb-6 text-primary">前情提要</h2>
+                
+                <div class="space-y-4 text-gray-200">
+                    <p class="animate-slide-up" style="animation-delay: 0.2s">你是个无产阶级码农，家族曾一度在封建主义和资本主义的压迫下成为牛马。但是但是但是！！！新中国成立了！码地改革成功了！生产资料公有了！家庭联产承包责任制推行了!具有合法劳动能力的你，请从今天开始为了社会的进步码地吧！</p>
+                    
+					<p class="animate-slide-up" style="animation-delay: 0.4s">国家向你提供了：生产工具：一个键盘</p>
+	            劳动对象：字节<br>
+					生产手段：码字</p>
+你所拥有的：<br>
+精力：128K<br>
+码地：0B<br>
+时间：1M=1024K<br>
+/*128k=1节气块 精力>=码地 正常运作；精力<码地 码地浪费，不予批准*/</p>
+                    
+                    <p class="animate-slide-up font-bold text-accent" style="animation-delay: 0.6s">按ENTER键开始游戏</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Game Screen (placeholder) -->
+        <div id="game-screen" class="screen flex flex-col items-center justify-center bg-gradient-game">
+            <h2 class="text-4xl font-bold mb-6 animate-fade-in">Game Started!</h2>
+            <p class="text-xl animate-fade-in" style="animation-delay: 0.3s">This is where the game would begin...</p>
+            <p class="mt-4 text-gray-300 animate-fade-in" style="animation-delay: 0.6s">Press ESC to return to start screen</p>
+        </div>
+    </div>
+
+    <script>
+        // Create star background
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            const starCount = 150;
+            
+            for (let i = 0; i < starCount; i++) {
+                const star = document.createElement('div');
+                star.classList.add('star');
+                
+                // Random position
+                const x = Math.random() * 100;
+                const y = Math.random() * 100;
+                
+                // Random size
+                const size = Math.random() * 3 + 1;
+                
+                // Random animation delay
+                const delay = Math.random() * 4;
+                
+                star.style.left = `${x}%`;
+                star.style.top = `${y}%`;
+                star.style.width = `${size}px`;
+                star.style.height = `${size}px`;
+                star.style.animationDelay = `${delay}s`;
+                
+                starsContainer.appendChild(star);
+            }
+        }
+        
+        // Initialize the game
+        document.addEventListener('DOMContentLoaded', () => {
+            // Create star background
+            createStars();
+            
+            const startScreen = document.getElementById('start-screen');
+            const instructionsScreen = document.getElementById('instructions-screen');
+            const gameScreen = document.getElementById('game-screen');
+            const startButton = document.getElementById('start-button');
+            
+            // Start button click event
+            startButton.addEventListener('click', () => {
+                startScreen.classList.remove('active');
+                setTimeout(() => {
+                    instructionsScreen.classList.add('active');
+                }, 500);
+            });
+            
+            // Enter key press event
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && instructionsScreen.classList.contains('active')) {
+                    instructionsScreen.classList.remove('active');
+                    setTimeout(() => {
+                        window.location.href = "subweb/问答.html" 
+                        // Here you would typically initialize and start the actual game
+                    }, 500);
+                }
+                
+                // ESC key to return to start screen
+                if (e.key === 'Escape' && gameScreen.classList.contains('active')) {
+                    gameScreen.classList.remove('active');
+                    setTimeout(() => {
+                        startScreen.classList.add('active');
+                    }, 500);
+                }
+            });
+            
+            // Touch support for mobile devices
+            instructionsScreen.addEventListener('touchstart', () => {
+                if (instructionsScreen.classList.contains('active')) {
+                    instructionsScreen.classList.remove('active');
+                    setTimeout(() => {
+                        gameScreen.classList.add('active');
+                    }, 500);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
