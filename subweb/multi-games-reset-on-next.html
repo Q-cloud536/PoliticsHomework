@@ -1231,7 +1231,7 @@
                         if (!window.clickGameState) return 0;
                         const time = window.clickGameState.currentTime || 0; // seconds
                         const baseScore = 128;
-                        const score = baseScore - Math.max(0, Math.round((time - 30) * 2));
+                        const score = baseScore - Math.max(0, Math.round((time - 128) * 0.5));
                         return Math.max(0, score);
                     }
                     case 'whack-a-mole': {
@@ -2856,4 +2856,5 @@
     </script>
 </body>
 </html>
+
                 
